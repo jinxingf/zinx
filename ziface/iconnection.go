@@ -13,7 +13,7 @@ type IConnection interface {
 	// GetConnID get connection id
 	GetConnID() uint32
 	// RemoteAddr get remote client connection info, such as TCP status
-	RemoteAddr() *net.Addr
+	RemoteAddr() net.Addr
 	// Send data, send data to remote client
 	Send(date []byte) error
 }
