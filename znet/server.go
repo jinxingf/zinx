@@ -1,9 +1,9 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
 	"net"
+	"zinx/ziface"
 )
 
 type Server struct {
@@ -11,19 +11,7 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
-}
-
-// CallBackToClient currently call back function is hardcode, call back function
-// should be as args of connection
-func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	// write back
-	fmt.Println("[Conn Handle] CallBackToClient ...")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("write back buf err ", err)
-		return errors.New("CallBackToClient error")
-	}
-
-	return nil
+	Route     ziface.IRouter
 }
 
 func (s *Server) Start() {
@@ -55,7 +43,7 @@ func (s *Server) Start() {
 		}
 
 		// client finished connection create, do something. write back some data
-		dealConn := NewConnection(conn, cid, CallBackToClient)
+		dealConn := NewConnection(conn, cid, s.Route)
 		cid++
 
 		// process business
@@ -79,12 +67,18 @@ func (s *Server) Server() {
 	select {}
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Route = router
+	fmt.Println("Add router success")
+}
+
 func NewServer(name string) *Server {
 	s := &Server{
 		Name:      name,
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Route:     nil,
 	}
 	return s
 }
