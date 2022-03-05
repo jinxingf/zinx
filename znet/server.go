@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"net"
 )
@@ -10,6 +11,19 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+}
+
+// CallBackToClient currently call back function is hardcode, call back function
+// should be as args of connection
+func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
+	// write back
+	fmt.Println("[Conn Handle] CallBackToClient ...")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		fmt.Println("write back buf err ", err)
+		return errors.New("CallBackToClient error")
+	}
+
+	return nil
 }
 
 func (s *Server) Start() {
@@ -28,6 +42,10 @@ func (s *Server) Start() {
 		return
 	}
 	fmt.Println("start Zinx server succ, ", s.Name, " success, Listening...")
+
+	var cid uint32
+	cid = 0
+
 	for {
 		// 3. block wait for client connection, process client buss
 		conn, err := listener.AcceptTCP()
@@ -37,22 +55,8 @@ func (s *Server) Start() {
 		}
 
 		// client finished connection create, do something. write back some data
-		go func() {
-			for {
-				buf := make([]byte, 512)
-				cnt, err := conn.Read(buf)
-				if err != nil {
-					fmt.Println("receive buf error :", err)
-					continue
-				}
-				fmt.Printf("receive data from client buf : %s, cnt = %d\n", buf, cnt)
-
-				if _, err := conn.Write(buf[:cnt]); err != nil {
-					fmt.Println("write buf back error :", err)
-					continue
-				}
-			}
-		}()
+		NewConnection(conn, cid, CallBackToClient)
+		cid++
 	}
 
 }
