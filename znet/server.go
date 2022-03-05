@@ -55,8 +55,11 @@ func (s *Server) Start() {
 		}
 
 		// client finished connection create, do something. write back some data
-		NewConnection(conn, cid, CallBackToClient)
+		dealConn := NewConnection(conn, cid, CallBackToClient)
 		cid++
+
+		// process business
+		go dealConn.Start()
 	}
 
 }
