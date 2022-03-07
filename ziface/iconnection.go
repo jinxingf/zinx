@@ -14,8 +14,8 @@ type IConnection interface {
 	GetConnID() uint32
 	// RemoteAddr get remote client connection info, such as TCP status
 	RemoteAddr() net.Addr
-	// Send data, send data to remote client
-	Send(date []byte) error
+	// SendMsg data, send data to remote client
+	SendMsg(uint32, []byte) error
 }
 
 // HandleFunc define process business function,

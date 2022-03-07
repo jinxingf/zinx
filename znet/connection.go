@@ -1,9 +1,10 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
-	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -39,18 +40,34 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		// read data into buffer, 512 byte
-		buf := make([]byte, utils.GlobalConf.MaxPackageSize)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("recv buf err ", err)
-			continue
+		// read msg header, 8 byte
+		dp := NewDataPack()
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read msg header err ", err)
+			break
 		}
+		// unpack header, get msg id and length
+		msg, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack msg err ", err)
+			break
+		}
+		// read msg data by msg length
+		var data []byte
+		if msg.GetMsgLen() > 0 {
+			data = make([]byte, msg.GetMsgLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("read msg data err ", err)
+				break
+			}
+		}
+		msg.SetMsgData(data)
 
 		// get current request
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		// get register binding function from router
 		go func(request ziface.IRequest) {
@@ -58,11 +75,6 @@ func (c *Connection) StartReader() {
 			c.Router.Handle(request)
 			c.Router.PostHandle(request)
 		}(&req)
-		//// call handleAPI to process data read from buf
-		//if err := c.HandleAPI(c.Conn, buf, cnt); err != nil {
-		//	fmt.Println("ConnID = ", c.Conn, " handle err ", err)
-		//	break
-		//}
 	}
 }
 
@@ -106,6 +118,19 @@ func (c *Connection) RemoteAddr() net.Addr {
 }
 
 // Send data, send data to remote client
-func (c *Connection) Send(date []byte) error {
+func (c *Connection) SendMsg(id uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("connection is closed when send msg")
+	}
+	dp := NewDataPack()
+	binaryMsg, err := dp.Pack(NewMsgPackage(id, data))
+	if err != nil {
+		fmt.Println("pack msg err ", err)
+		return errors.New("pack msg err")
+	}
+	if _, err := c.Conn.Write(binaryMsg); err != nil {
+		fmt.Println("write msg id  ", id, " msg data ", string(data), " err ", err)
+		return errors.New("conn Write err")
+	}
 	return nil
 }

@@ -4,7 +4,7 @@ import "zinx/ziface"
 
 type Request struct {
 	conn ziface.IConnection
-	data []byte
+	msg  ziface.IMessage
 }
 
 // GetConnection get current connection
@@ -14,5 +14,9 @@ func (r *Request) GetConnection() ziface.IConnection {
 
 // GetData get request data
 func (r *Request) GetData() []byte {
-	return r.data
+	return r.msg.GetData()
+}
+
+func (r *Request) GetMsgId() uint32 {
+	return r.msg.GetMsgId()
 }

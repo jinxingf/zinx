@@ -10,4 +10,6 @@ type IRequest interface {
 
 	// GetData get request data
 	GetData() []byte
+
+	GetMsgId() uint32
 }
