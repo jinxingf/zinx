@@ -117,7 +117,7 @@ func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-// Send data, send data to remote client
+// SendMsg Send data, send data to remote client
 func (c *Connection) SendMsg(id uint32, data []byte) error {
 	if c.isClosed == true {
 		return errors.New("connection is closed when send msg")
