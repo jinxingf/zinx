@@ -8,5 +8,5 @@ type IServer interface {
 	// Server Run server
 	Server()
 	// AddRouter function, register route function for current server, for client connection to use.
-	AddRouter(route IRouter)
+	AddRouter(uint32, IRouter)
 }

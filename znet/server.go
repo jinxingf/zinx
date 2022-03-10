@@ -8,11 +8,11 @@ import (
 )
 
 type Server struct {
-	Name      string
-	IPVersion string
-	IP        string
-	Port      int
-	Route     ziface.IRouter
+	Name       string
+	IPVersion  string
+	IP         string
+	Port       int
+	MsgHandler ziface.IMsgHandler
 }
 
 func (s *Server) Start() {
@@ -45,7 +45,7 @@ func (s *Server) Start() {
 		}
 
 		// client finished connection create, do something. write back some data
-		dealConn := NewConnection(conn, cid, s.Route)
+		dealConn := NewConnection(conn, cid, s.MsgHandler)
 		cid++
 
 		// process business
@@ -69,18 +69,18 @@ func (s *Server) Server() {
 	select {}
 }
 
-func (s *Server) AddRouter(router ziface.IRouter) {
-	s.Route = router
+func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
+	s.MsgHandler.AddRouter(msgID, router)
 	fmt.Println("Add router success")
 }
 
 func NewServer(name string) *Server {
 	s := &Server{
-		Name:      utils.GlobalConf.Name,
-		IPVersion: "tcp4",
-		IP:        utils.GlobalConf.Host,
-		Port:      utils.GlobalConf.TCPPort,
-		Route:     nil,
+		Name:       utils.GlobalConf.Name,
+		IPVersion:  "tcp4",
+		IP:         utils.GlobalConf.Host,
+		Port:       utils.GlobalConf.TCPPort,
+		MsgHandler: NewMsgHandle(),
 	}
 	return s
 }
