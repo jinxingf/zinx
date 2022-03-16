@@ -42,7 +42,7 @@ func init() {
 	// default config value
 	GlobalConf := &GlobalConfig{
 		Name:           "ZinxServerAPP",
-		Version:        "v0.4",
+		Version:        "v0.7",
 		TCPPort:        8999,
 		Host:           "127.0.0.1",
 		MaxConn:        1000,

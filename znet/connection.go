@@ -16,7 +16,11 @@ type Connection struct {
 	// current connection status
 	isClosed bool
 	// notify current connection exist channel
+	// reader tell writer exist by channel
 	ExitChan chan bool
+
+	// no buf channel for reader and writer transform data
+	msgChan chan []byte
 
 	MsgHandler ziface.IMsgHandler
 }
@@ -26,15 +30,16 @@ func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler)
 		Conn:       conn,
 		ConnID:     connID,
 		isClosed:   false,
-		MsgHandler: handler,
 		ExitChan:   make(chan bool, 1),
+		msgChan:    make(chan []byte),
+		MsgHandler: handler,
 	}
 
 	return c
 }
 
 func (c *Connection) StartReader() {
-	fmt.Println("reader goroutine running.")
+	fmt.Println("[Reader goroutine is running.]")
 	defer fmt.Println("connID = ", c.ConnID, " Reader is exit, remoteAddr is ", c.RemoteAddr())
 	defer c.Stop()
 
@@ -73,12 +78,33 @@ func (c *Connection) StartReader() {
 	}
 }
 
+// StartWriter send data to client
+func (c *Connection) StartWriter() {
+	fmt.Println("[Writer goroutine is running.]")
+	defer fmt.Println(c.RemoteAddr().String(), " [Writer goroutine exist.]")
+
+	// block for reader data from channel and send to client
+	for {
+		select {
+		case data := <-c.msgChan:
+			if _, err := c.GetTCPConnection().Write(data); err != nil {
+				fmt.Println("Send data to client failed, err ", err)
+				return
+			}
+		case <-c.ExitChan:
+			// reader has existed, writer goroutine also need to exist
+			return
+		}
+	}
+
+}
+
 // Start connection, current connection start to work
 func (c *Connection) Start() {
 	fmt.Println("Connection start(), ConnID = ", c.ConnID)
 	go c.StartReader()
 	// start to read data from current connection, and do some business
-	// TODO: add write data from current connection adn do some business
+	go c.StartWriter()
 
 }
 
@@ -93,8 +119,11 @@ func (c *Connection) Stop() {
 	if err != nil {
 
 	}
+	// close writer goroutine
+	c.ExitChan <- true
 	// recycle channel resource
 	close(c.ExitChan)
+	close(c.msgChan)
 }
 
 // GetTCPConnection get current connection binding socket
@@ -123,9 +152,8 @@ func (c *Connection) SendMsg(id uint32, data []byte) error {
 		fmt.Println("pack msg err ", err)
 		return errors.New("pack msg err")
 	}
-	if _, err := c.Conn.Write(binaryMsg); err != nil {
-		fmt.Println("write msg id  ", id, " msg data ", string(data), " err ", err)
-		return errors.New("conn Write err")
-	}
+
+	c.msgChan <- binaryMsg
+
 	return nil
 }
