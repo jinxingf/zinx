@@ -21,6 +21,10 @@ type GlobalConfig struct {
 	Version        string // zinx server version
 	MaxConn        int    // TCPServer max connection
 	MaxPackageSize uint32 // package max size
+
+	// Worker pool size
+	WorkerPoolSize    uint32
+	MaxWorkerTaskSize uint32
 }
 
 var GlobalConf *GlobalConfig
@@ -41,12 +45,14 @@ func (g *GlobalConfig) Reload() {
 func init() {
 	// default config value
 	GlobalConf := &GlobalConfig{
-		Name:           "ZinxServerAPP",
-		Version:        "v0.7",
-		TCPPort:        8999,
-		Host:           "127.0.0.1",
-		MaxConn:        1000,
-		MaxPackageSize: 4096,
+		Name:              "ZinxServerAPP",
+		Version:           "v0.7",
+		TCPPort:           8999,
+		Host:              "127.0.0.1",
+		MaxConn:           1000,
+		MaxPackageSize:    4096,
+		WorkerPoolSize:    10,
+		MaxWorkerTaskSize: 1024,
 	}
 
 	// try to load config from config file
