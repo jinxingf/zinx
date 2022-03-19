@@ -19,6 +19,9 @@ func (s *Server) Start() {
 	fmt.Printf("[Zinx] zinx global config : %+v", utils.GlobalConf)
 	fmt.Printf("[Start] Server listenner at IP : %s, Port : %d\n", s.IP, s.Port)
 
+	// 0. Start worker pool
+	s.MsgHandler.StartWorkerPool()
+
 	// 1. get tcp addr
 	addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {

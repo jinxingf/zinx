@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -73,8 +74,14 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		// get register binding function from msg handler
-		go c.MsgHandler.DoMsgHandler(&req)
+
+		if utils.GlobalConf.WorkerPoolSize > 0 {
+			c.MsgHandler.SendMsgToTask(&req)
+		} else {
+			// get register binding function from msg handler
+			c.MsgHandler.SendMsgToTask(&req)
+		}
+
 	}
 }
 
